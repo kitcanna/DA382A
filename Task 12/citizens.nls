@@ -1,0 +1,199 @@
+; File with the "to-go"- functionality of citizen-agents
+
+; FILE HISTORY:
+
+; 2022-04-10 Initial template, gks
+; 2023-04-15 changed perceive-citizen-env, added intentions move-freely, frozen, avoid-collision, added state state-proactive (Anna Selstam, Malin Ramkull)
+; 2023-04-20 updated structure (Anna Selstam, Malin Ramkull, Wael Mahrous)
+;
+;
+;---------------------------------------------------
+
+
+
+
+; ******************* PROCESS MESSAGES *****************
+; reading messages
+to process-citizen-msg
+  
+  ; added for test - create msg "collision"
+  let other-activists other turtles with [breed = citizens AND activist? = true]
+  if any? other-activists in-radius collision_range [
+    let target nobody
+    set target min-one-of other-activists [xcor + ycor]
+    
+    let collisionMsg create-message "inform" 	; create the message with the performative
+    set collisionMsg add-sender self collisionMsg 		; add sender to the message
+    
+    set collisionMsg add-receiver [who] of target collisionMsg 	; add receiver to the message
+    set collisionMsg add-content "Collision with activist!" collisionMsg 	; add content to the message
+      
+    add-intention "send " collisionMsg 
+  ]
+  
+  
+  ; added for test - create msg "collision"
+  let other-police other turtles with [breed = cops]
+  if any? other-police in-radius collision_range [
+    let target nobody
+    set target min-one-of other-police [xcor + ycor]
+    
+    let collisionMsg create-message "inform" 	; create the message with the performative
+    set collisionMsg add-sender self collisionMsg 		; add sender to the message
+    
+    set collisionMsg add-receiver [who] of target collisionMsg 	; add receiver to the message
+    set collisionMsg add-content "Collision with police!" collisionMsg 	; add content to the message
+      
+    add-intention "send " collisionMsg 
+  ]
+  
+  
+  
+  
+  
+   ;;;; ****** CHECK MSG HERE ******
+  let performative ""
+  let msg_content ""
+  let type_content ""
+  let msg ""
+
+  while [not empty? incoming-queue] [
+
+    set msg get-message
+   ; print (word "received message:  " msg )
+    
+   ;set performative get-performative msg
+   ;set msg_content get-content msg
+   ;set type_content item 0 get-content msg
+    
+   ;if performative = "inform" []
+  ]
+  
+end ;- process-citizen-msg
+
+
+; ******************* PERCEIVE ENVIRONMENT *****************
+; Updating beliefs
+to perceive-citizen-env
+  
+  ;;;;;;;;;;;;;;;;,
+  ; get the freeze_counter value and store it in freezy
+  let freezy item 1(read-first-belief-of-type "freeze_count")  
+  let frusty item 1(read-first-belief-of-type "frustration")
+  let mefreezy? item 1(read-first-belief-of-type "mefrozen")
+  
+  ifelse mefreezy? [
+     if freezy > 0 [ 
+      add-intention "frozen" "true"
+      set mefreezy? true
+      
+    ] 
+    if freezy = 0 [      
+      add-intention "move-freely" "true"
+      set mefreezy? false
+    ]
+  ]
+  
+  ;ELSE 
+  [
+    ifelse (any? other turtles in-radius collision_range)  [ 
+          add-intention "frozen" "true"
+          set frusty frusty * 1.1
+
+    ]
+    [
+       ifelse frusty > threshold [        
+        update-belief create-belief "threshold_met" true
+        set activist? true
+      
+      ] 
+        [
+          add-intention "move-freely" "true"
+          set frusty frusty * 0.90
+          update-belief create-belief "threshold_met" false
+          set activist? false 
+        
+        ]
+     ]
+  ]
+  
+  update-belief create-belief "frustration" frusty
+  update-belief create-belief "mefrozen" mefreezy?
+  
+end ;- perceive-citizen-env
+
+
+;******************* INTENTIONS *****************
+; procedures that are put onto the intention stack and that are executed
+; to test this testfunction you will need to put it onto the intention stack of the citizen
+;to test-citizen-intention
+;  print word who ": test-citizen-intention"
+;end ;- test-citizen-intention
+
+
+to move-freely
+  ;print word who ": in move freely"
+    
+  let frusty item 1(read-first-belief-of-type "frustration")
+  if (frusty < 20 ) [set color white]
+  if (frusty >= 20 ) [ set color yellow]
+  if (frusty > 40) [set color pink]
+  
+ 
+    rt random 50
+    lt random 50
+    fd 1
+
+end
+
+to frozen
+  set color cyan 
+  
+  let freezy item 1(read-first-belief-of-type "freeze_count")  
+  ;print (word who ": " freezy)
+  
+    ifelse freezy > 0 [ 
+      
+      set freezy freezy - 1 
+      update-belief create-belief "freeze_count" freezy
+      update-belief create-belief "mefrozen" true
+      
+    ] 
+    [ ;ELSE     
+      update-belief create-belief "freeze_count" 5
+      update-belief create-belief "mefrozen" false
+
+    ]
+
+end 
+
+to avoid-collision
+  ;print word who ": in avoid collision"
+  set color red
+  
+  if any? other turtles in-radius vision_range [
+    move-to one-of patches in-radius vision_range with [not any? turtles-here]
+  ]
+end 
+      
+; ******************* FINITE STATE MACHINE *****************
+; Running the current state
+
+to test-citizen
+  ;print word who ": in state test-citizen"
+end ;- test-citizen
+
+to state-proactive
+  ;print word who ": in state proactive"
+  
+  let thressy? item 1(read-first-belief-of-type "threshold_met")
+  if thressy? [
+      add-intention "avoid-collision" "true" 
+    ]
+  
+  
+  ;run current_state
+end
+
+
+

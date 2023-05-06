@@ -1,0 +1,83 @@
+; File with functionality regarding the setup of agents
+
+; FILE HISTORY:
+
+; 2023-04-10 Template created by gks
+; 2023-04-15 changed initiation variables under citizens, see "CHANGED" and "ADDED". (Anna Selstam, Malin Ramkull)
+;
+;
+;
+;
+;---------------------------------------------------
+
+
+; ******************* SETUP AGENTS *****************
+;
+to setup-agents
+  
+  ;---- setup citizens
+  
+  create-citizens num-agents [
+    set label who
+    set shape "person" 
+    set size 1
+    set color white
+    setxy random 30 random 30    
+    set friendsList []
+    
+    ; added for DiC_cpht7 task
+    set activist? false
+    set incoming-queue []
+    
+    
+    ;****** CHANGED ******
+    set current_state "state-proactive"
+    set intentions []
+    set beliefs []
+    
+    
+    ;****** ADDED ******   
+    set vision_range 6
+    set threshold 50
+    set collision_range 1
+   
+    ;****** ADDED ****** set initial-intention 
+    add-intention "move-freely" "true"
+   
+
+    ;;****** ADDED ****** set initial-beliefs     
+    set mefrozen? false
+    add-belief create-belief "mefrozen" mefrozen?
+
+    set freeze_count 5
+    add-belief create-belief "freeze_count" freeze_count
+
+    set frustration random 60
+    add-belief create-belief "frustration" frustration
+    
+    set threshold_met? false
+    add-belief create-belief "threshold_met" threshold_met?
+    
+  ]
+  
+  
+  
+  ;---- setup cops
+  
+  create-cops round(num-agents * 0.01 * perc-cops)  [
+    set label who
+    set shape "person police" 
+    set size 1
+    set color blue
+    setxy random 10 random 40
+    set intentions []
+    set beliefs []
+    set incoming-queue []
+    set mode "eager"
+    set current_state "test-cop"
+    
+  ]
+  
+  
+end ;--setup-agents
+
