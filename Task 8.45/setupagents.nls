@@ -1,0 +1,131 @@
+; File with functionality regarding the setup of agents
+
+; FILE HISTORY:
+
+; 2023-04-10 Template created by gks
+; 2023-04-14 Change current_state to idle, Group 8 (Ingvar Pétursson, Hampus Oxenholt, Adam Makowski)
+; 2023-04-27 Group 4 (Anton, Marcus & Andreas)
+; - added the temporary state go-to-work to test the states
+; - added placeOfWork variable which is initialized with a place to work (intializing just for testing currently)
+; - added vision_range 5 where less than that will crash the program. This is because the agent needs to be able to move and lower than 5 would cause an agent in the
+;   middle of the townsquare to have no available patches thus crashing. The size of the townsquare is connected to the create-building size parameter in setupenvironment.nls.
+; 2023-04-14 Added the template beliefs, Group 8 (Ingvar Pétursson, Hampus Oxenholt)
+; 2023-05-02 Changed the start states, Group 8 (Ingvar Pétursson, Hampus Oxenholt)
+;
+;---------------------------------------------------
+
+
+; ******************* SETUP AGENTS *****************
+;
+to setup-agents
+  
+  ;---- setup citizens
+  
+  create-citizens floor num-agents * (100 - perc-cops) / 100 [
+    set label who
+    set shape "person" 
+    set size 1
+    set color white
+    setxy random 30 random 30
+    set intentions []
+    set beliefs []
+    set incoming-queue []
+    set friendsList []
+     
+    set placeOfWork one-of ["factory" "workPlace" "volunteerPlace" "university"]
+    set employed? false ; Flag that indicates is the agent got work at the factory that day (see task 5 for more information)
+    set vision_range 5  ; Less vision_range will crash go-to-work if they spawn inside a region and has no allowed movement (see version history for more info).
+    
+    ; Set the initial states to idle
+    set next_state    [ -> at-home ]
+    set current_state [ -> at-home ]
+  ]
+  
+  ; Give all citizens the belief that they want to work
+  ask citizens [
+
+    ; Add all beliefs
+    ; These beliefs are a template, the names and value can be changed to be adapted to the situation. 
+    ; Just make sure they are not already in use, you can also add your own beliefs if it is needed. 
+
+    let belief create-belief "can-work" "true"
+    add-belief belief
+
+    set belief create-belief "want-entertainment" "false"
+    add-belief belief
+
+    set belief create-belief "go-to-university" "false"
+    add-belief belief
+
+    set belief create-belief "go-to-town-square" "false"
+    add-belief belief
+
+    set belief create-belief "go-to-restaurant" "false"
+    add-belief belief
+
+    set belief create-belief "go-to-volunteer-place" "false"
+    add-belief belief
+
+    set belief create-belief "hold-speech" "false"
+    add-belief belief
+
+    set belief create-belief "walk-around-freely" "false"
+    add-belief belief
+
+    set belief create-belief "make-friends" "false"
+    add-belief belief
+
+    set belief create-belief "meet-friends" "false"
+    add-belief belief
+
+    set belief create-belief "use-social-media" "false"
+    add-belief belief
+
+    set belief create-belief "organize-demonstration" "false"
+    add-belief belief
+
+    set belief create-belief "demonstrate" "false"
+    add-belief belief
+  ]
+  
+  
+  ;---- setup cops
+  
+  create-cops floor num-agents * perc-cops / 100 [
+    set label who
+    set shape "person police" 
+    set size 1
+    set color blue
+    setxy random 10 random 40
+    set intentions []
+    set beliefs []
+    set incoming-queue []
+    set mode "eager"
+    set next_state    [ -> test-cop]
+    set current_state [ -> test-cop]
+    
+    set title "officer"
+    set vision_range 10
+    set head-x 0
+    set head-y 0
+    
+    let belief create-belief "am-officer" "true"
+    add-belief belief
+
+    set belief create-belief "on-patrol" "false"
+    add-belief belief
+  ]
+  
+  ask one-of cops [
+    set title "chief"
+    set color pink
+    set shape "person"
+    
+    let belief create-belief "am-chief" "true"
+    add-belief belief
+    
+  ]
+  
+  
+end ;--setup-agents
+

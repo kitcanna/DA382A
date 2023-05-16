@@ -1,0 +1,474 @@
+; File with the "to-go"- functionality of citizen-agents
+
+; FILE HISTORY:
+
+; 2022-04-10 Initial template, gks
+; 2023-04-13 Added work at factory intention, Group 8 (Ingvar Pétursson, Hampus Oxenholt, Adam Makowski)
+; 2023-04-14 Rewrote belief system, Group 8 (Ingvar Pétursson, Hampus Oxenholt, Adam Makowski)
+; 2023-04-20 Updated the entertainment belief and working at factory state, Group 8 (Ingvar Pétursson, Hampus Oxenholt, Adam Makowski)
+; 2023-04-27 Added the template states, Group 8 (Ingvar Pétursson, Hampus Oxenholt, Adam Makowski)
+; 2023-04-27 Group 4 (Anton, Marcus & Andreas)
+; - Created the state go-to-work (the citizen moves towards their work place's door)
+; - Created the state move-at-work (move around inside the work region while at work)
+; - Created the state exit-work-building (exit the work building by moving to the door patch (currently shown with the red patch))
+; - Created the state go-home (citizens make their way home via either empty patches or townsquare patches)
+; 2023-05-02 Modified move-at-work, go-to-work and added comments to states, Group 8 (Ingvar Pétursson, Hampus Oxenholt, Adam Makowski)
+; 
+; 2023-05-11 Group 3 Anna Selstam, Malin Ramkull, Wael Mahrous: 
+; - Added functionality to check messages
+; - Added function: to-report estimated-arrest-probability 
+; - Added function: to at-townSquare 
+; - Added if patch-type-check = "townSquare" in perceive-citizen-env
+; - Added function: send-citizen-msg
+; - Added function: being-arrested
+
+;---------------------------------------------------
+
+; ******************* PROCESS MESSAGES *****************
+; reading messages
+to process-citizen-msg
+  ; print word who ": citizen-messages processed"
+  
+    ;;;; ****** CHECK MSG HERE ******
+  let performative ""
+  let msg_content ""
+  let type_content ""
+  let msg ""
+  let sender ""
+
+  while [not empty? incoming-queue] [
+
+   set msg get-message
+   set sender get-sender msg
+   set performative get-performative msg
+   set msg_content get-content msg
+   
+    ;if performative = "x" [
+    ;]
+  ]
+  
+end ;- process-citizen-msg
+
+
+; ******************* PERCEIVE ENVIRONMENT *****************
+; Updating beliefs
+to perceive-citizen-env
+  ; print word who ": citizen environment perceived"
+  ; test:
+  ; put the intention test-citizen-intention onto the intention stack
+  
+  ; Update all beliefs
+  evaluate-belief
+
+  ; Reactive part of the agent
+  ; The reactive intentions are added to the intention stack here. 
+  
+  ; Intention for checking in at the factory.
+  let current-patch patch-here ; check if on factory patch  
+  let patch-type-check [region] of current-patch   ; Get the current patch here type
+
+  if patch-type-check = "factory" [
+    add-intention "check-in" "check-in-done"
+  ]
+  
+  
+  ; -------------------- ADDED FOR TASK 11.9 /ANNA -------------------- 
+  if patch-type-check = "townSquare" [
+    add-intention "at-townSquare" "true"
+  ]
+  ; ------------------------------------------------------------------- 
+  
+  
+  
+  ; More add-intentions can be added here
+  
+end ;- perceive-citizen-env
+
+; In this function all the beliefs are updated 
+to evaluate-belief
+  
+  ; Set the belief "can-work", which indicates if the agent beliefs that it can work today
+  ; Check if the can-work belief exist
+  let work-belief-exist exist-beliefs-of-type "can-work"
+  
+  if work-belief-exist = true [
+    
+    ifelse flagEvening = true or flagWeekend = true or flagMorning = false or factory-workers-current >= factory-workers-current-max [
+      let can-work-belief-update create-belief "can-work" false
+      update-belief can-work-belief-update
+    ] [
+      let can-work-belief-update create-belief "can-work" true
+      update-belief can-work-belief-update
+    ]
+    
+  ]
+  
+  ; Set the belief "want-entertainment", which indicates if the agent beliefs that
+  ; it wants to go to the entertainment place 
+  let entertainment-belief-exist exist-beliefs-of-type "want-entertainment"
+  
+  if entertainment-belief-exist = true [
+    
+    ifelse flagEvening = true and entertained <= 20 [
+      let want-entertainment-belief-update create-belief "want-entertainment" true
+      update-belief want-entertainment-belief-update
+    ] [
+      let want-entertainment-belief-update create-belief "want-entertainment" false
+      update-belief want-entertainment-belief-update
+    ]
+  ]  
+  
+ 
+  ; Add code for belief update here
+  
+end 
+
+
+;******************* INTENTIONS *****************
+; procedures that are put onto the intention stack and that are executed
+; to test this testfunction you will need to put it onto the intention stack of the citizen
+
+to check-in
+  if factory-workers-current <= factory-workers-current-max and flagMorning = true and employed? = false [
+    set factory-workers-current factory-workers-current + 1
+    set employed? true
+  ]
+end
+
+; ******************* INTENTION CHECKS *****************
+; Metod(s) for checing if an intention is done. 
+
+to-report check-in-done
+  report true
+end
+
+
+
+; ******************* FINITE STATE MACHINE *****************
+; Running the current state
+
+
+
+
+; -------------------- ADDED FOR TASK 11.9 /ANNA -------------------- 
+to-report estimated-arrest-probability
+  
+  let k 2.3 ;experiment with the value of k or look it up its suggested value from the research papers
+  
+  let c count (cops-on patches with [region = "townSquare"])
+  let a 1 + count (citizens-on patches with [region = "townSquare"]) ;needs to be changed to count activists instead of citizens
+  
+  report 1 - exp (- k * floor (c / a)) 
+  
+end
+
+to at-townSquare
+  ;print (word who ": EAP: " estimated-arrest-probability)
+  ;print (word who ": Frustration: " frustration)
+  ;print (word who ": Fear: " fear)
+  
+  let i-am-demonstrating item 1(read-first-belief-of-type "demonstrate")
+  
+  ifelse i-am-demonstrating = "false" [
+    
+    if frustration >= fear * estimated-arrest-probability [
+      
+      print word who ": i want to demonstrate!" ;flag, you can de-comment
+      set color red
+      set activist? true
+      update-belief create-belief "demonstrate" true
+      
+      ; add functionality for demonstration here 
+    ]
+  ]
+  
+  ;      group 7 task
+  [
+    if frustration < fear * estimated-arrest-probability [
+      print word who ": i want to run away!" ;flag, you can de-comment
+      set color white
+      set activist? false
+      update-belief create-belief "demonstrate" false
+      
+      ; add functionality to go back to normal life here 
+    ]
+  ]
+  
+end
+
+
+to being-arrested
+  print (word who ": i am arrested!") ;flag, you can de-comment
+  
+  ; add functionality for arrest here, move the three lines below to functionality
+  set color white
+  set activist? false
+  update-belief create-belief "demonstrate" false
+  
+end
+
+; ------------------------------------------------------------------- 
+
+
+
+to demonstrate
+end
+
+
+to at-home
+  
+  let work-belief-exist exist-beliefs-of-type "can-work"
+  
+  if work-belief-exist = true [ 
+  
+    ; Get the first element of the type "can-work", there should only be one of these elements
+    let work-belief first beliefs-of-type "can-work"
+    
+    let ok word "can work" item 1 work-belief
+    
+    if item 1 work-belief = true [
+      set next_state [ -> go-to-work ]
+    ]
+    
+  ] 
+  
+end
+
+to go-to-factory
+  ; It is recommended that go-to-work function is used, but this function can be used if needed. 
+  ; The next state in go-to-work is at-workplace.
+   
+  ; set next_state [ -> at-factory ]
+end 
+
+to at-factory 
+  
+  ; If the agent did not manage 
+  if employed? = false [
+    set next_state [ -> walk-around-freely ]
+  ]
+  
+  ifelse entertained >= 10 [
+    set entertained (entertained - 10)
+  ] [
+    set entertained 0
+  ]
+  
+  ifelse flagEvening = true [
+    exit-work-building
+    
+    set factory-workers-current factory-workers-current - 1
+    set employed? false
+    set next_state [ -> walk-around-freely ]
+  ] [
+    move-at-work
+  ]
+  
+end
+
+to go-to-workplace
+  ; It is recommended that go-to-work function is used, but this function can be used if needed. 
+  ; The next state in go-to-work is at-workplace.
+end 
+
+to at-workplace
+
+  ; This code should be replaced, it only exist for visual purposes.
+  ifelse flagEvening = true [
+    exit-work-building
+    
+    set next_state [ -> go-home ]
+  ] [
+    move-at-work
+  ]
+  
+end 
+
+to go-to-entertainment
+  
+  ; let entertainment-patch patches with [ region = "eveningEntertainment" and doorway = true]
+  ; set entertainment-patch item 0 [region] of entertainment-patch
+  ; print entertainment-patch 
+  move-to locEntertainment
+  set next_state [ -> at-entertainment ]
+end 
+
+to at-entertainment
+  
+  if flagEvening = false [
+    set entertained random 21 + 80
+    set next_state [ -> go-home ]
+  ]
+  
+end 
+
+to go-to-university
+  ; It is recommended that go-to-work function is used, but this function can be used if needed. 
+  ; The next state in go-to-work is at-university.
+end
+
+to at-university
+  
+  ; This code should be replaced, it only exist for visual purposes.
+  ifelse flagEvening = true [
+    exit-work-building
+    
+    set next_state [ -> go-home ]
+  ] [
+    move-at-work
+  ]
+end
+
+to go-to-town-square
+end 
+
+to at-town-square
+end
+
+to go-to-restaurant
+end
+
+to at-restaurant
+end 
+
+to go-to-volunteer-place
+  ; It is recommended that go-to-work function is used, but this function can be used if needed. 
+  ; The next state in go-to-work is at-volunteer-place.
+end 
+
+to at-volunteer-place
+
+  ; This code should be replaced, it only exist for visual purposes.
+  ifelse flagEvening = true [
+    exit-work-building
+    
+    set next_state [ -> go-home ]
+  ] [
+    move-at-work
+  ]
+end
+
+to hold-speech
+end 
+
+to walk-around-freely
+  random_walk
+  
+  let entertainment-belief-exist exist-beliefs-of-type "want-entertainment"
+  
+  if entertainment-belief-exist = true [
+  
+    ; Get the first element of the type "want-entertainment", there should only be one of these elements
+    let entertainment-belief first beliefs-of-type "want-entertainment"
+    
+    ifelse item 1 entertainment-belief = true and flagEvening = true [
+      set next_state [ -> go-to-entertainment ]
+    ] [
+      
+      if flagEvening = true [
+        set next_state [ -> go-home ]
+      ]
+    ]
+  ]
+  
+end
+
+to make-friends
+end
+
+to meet-friends
+end 
+
+to use-social-media
+end
+
+to organize-demonstration
+end
+
+to going-to-prison
+end 
+
+to at-prison
+end
+
+; Citizen moves towards their work place's door
+to go-to-work
+  let myWorkPlace placeOfWork
+  let targetPatch patches with [region = myWorkPlace and doorway = true]
+  ifelse any? targetPatch in-radius vision_range 
+  [
+    move-to one-of targetPatch
+    ; set next_state "move-at-work"
+    
+    if myWorkPlace = "factory"        [ set next_state [ -> at-factory ] ]
+    if myWorkPlace = "workPlace"      [ set next_state [ -> at-workplace ] ]
+    if myWorkPlace = "volunteerPlace" [ set next_state [ -> at-volunteer-place ] ]
+    if myWorkPlace = "university"     [ set next_state [ -> at-university ] ]
+    
+  ]
+  [  
+      let movementAllowence patches with [region = "empty" or region = "townSquare"] in-radius vision_range
+      move-to min-one-of movementAllowence [distance one-of targetPatch]  
+  ]
+end
+
+; Citizens make their way home via either empty patches or townsquare patches
+to go-home
+  let movementAllowence patches with [region = "empty" or region = "townSquare"] in-radius vision_range
+  let homeLocation homeLoc ; need to save as local variable or the distance function will break.
+  let tempPatches patches in-radius vision_range
+  ifelse member? homeLocation tempPatches [
+    move-to homeLocation
+    set next_state [ -> at-home ]
+  ] [
+    move-to min-one-of movementAllowence [distance homeLocation]
+  ]
+end
+
+
+;******************* MISCELLANEOUS FUNCTIONS *****************
+; These are procedures that can be called from states but are not states themselves.
+; For example the random walk procedure is called from walk-around-freely state, but this is not
+; a state that they are in. 
+
+to send-citizen-msg [message-type content receiver]
+  let msg create-message message-type	; create the message with the performative
+  set msg add-receiver [who] of receiver msg 	; add receiver to the message
+  set msg add-content content msg 	; add content to the message
+      
+  add-intention "send " msg 
+end 
+
+; Move around inside the work region while at work, tries to stand alone on a patch.
+to move-at-work  
+  let myWorkPlace placeOfWork
+  let targets patches with [ region = myWorkPlace and count citizens-here = 0 ]
+  ifelse any? targets 
+  ; space available
+  [ move-to one-of targets ] 
+  ; every space occupied
+  [ move-to one-of patches with [ region = myWorkPlace ] ]
+end
+
+; Exit the work building by moving to the door patch (currently shown with the red patch)
+to exit-work-building
+  let myWorkPlace placeOfWork
+  let targets patches with [ region = myWorkPlace and doorway = true]
+  move-to one-of targets
+end
+
+; Moves the agent to a random patch that is currently not occupied and there are
+; no other turtles on that patch.
+to random_walk
+  
+  ; Get all empty patches
+  let empty_patches patches in-radius vision_range with [not any? turtles-here]
+
+  if any? empty_patches [
+    ; Move to that patch 
+    let target one-of empty_patches
+    face target
+    move-to target 
+  ]
+
+end

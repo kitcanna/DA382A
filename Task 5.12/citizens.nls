@@ -48,9 +48,6 @@ to process-citizen-msg
   ]
   
   
-  
-  
-  
    ;;;; ****** CHECK MSG HERE ******
   let performative ""
   let msg_content ""
@@ -138,8 +135,7 @@ to move-freely
   if (frusty < 20 ) [set color white]
   if (frusty >= 20 ) [ set color yellow]
   if (frusty > 40) [set color pink]
-  
- 
+
     rt random 50
     lt random 50
     fd 1

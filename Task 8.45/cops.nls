@@ -1,0 +1,146 @@
+; File with the "to-go"- functionality of cops-agents
+
+; FILE HISTORY:
+
+; 2022-04-10 Initial template, gks
+; 2022-05-11 Added functionality for cops to send messages and follow orders from their chief.. (Group 3 Anna Selstam, Malin Ramkull, Wael Mahrous)
+;
+;
+;
+;---------------------------------------------------
+
+
+
+
+; ******************* PROCESS MESSAGES *****************
+; reading messages
+to process-cop-msg
+  
+  ;;;; ****** CHECK MSG HERE ******
+  let performative ""
+  let msg_content ""
+  ;let type_content ""
+  let msg ""
+  let sender ""
+
+  while [not empty? incoming-queue] [
+
+   set msg get-message
+   set sender get-sender msg
+   
+   set performative get-performative msg
+   set msg_content get-content msg
+   let x_content item 0 get-content msg
+   let y_content item 1 get-content msg
+   
+    if performative = "backup" [
+      
+      update-belief create-belief "on-patrol" true
+      
+      set head-x x_content
+      set head-y y_content
+      
+      add-intention "walk-heading" "true" 
+    ]
+  
+  ]
+  
+end ;- process-cop-msg
+
+
+; ******************* PERCEIVE ENVIRONMENT *****************
+; Updating beliefs
+to perceive-cop-env
+
+  evaluate-cop-belief
+  
+  let patroool item 1(read-first-belief-of-type "on-patrol")  
+  
+  if patroool = "false" [
+    add-intention "move-freely" "true"
+  ] 
+  
+  update-belief create-belief "on-patrol" patroool
+  
+end ;- perceive-cop-env
+
+
+to move-freely
+  ;print word who ": in move freely"
+    rt random 50
+    lt random 50
+    fd 1
+
+end
+ 
+to send-cop-msg [message-type content receiver]
+  
+  let msg create-message message-type	; create the message with the performative
+  set msg add-receiver [who] of receiver msg 	; add receiver to the message
+  set msg add-content content msg 	; add content to the message
+      
+  add-intention "send " msg 
+  
+end 
+
+to walk-heading 
+  
+  ;ifelse list xcor ycor = list head-x head-y [
+  ifelse xcor = head-x and ycor = head-y [
+    let patroool item 1(read-first-belief-of-type "on-patrol")  
+    update-belief create-belief "on-patrol" "false"
+  ] 
+  [
+    facexy head-x head-y
+    fd 1
+    set color yellow
+    
+    let target nobody
+    ;let activists-on-the-way other turtles with [breed = citizens AND activist? = true ] 
+    let activists-on-the-way other turtles with [breed = citizens] 
+    if any? activists-on-the-way in-radius (vision_range * 2) [ 
+      
+      set target min-one-of activists-on-the-way [xcor + ycor]
+      send-cop-msg "arrest" "you are arrested" target
+      print "sent"
+      
+    ]
+    
+  ]
+  
+end
+
+to call-backup
+  let message-type "backup"
+  let content (list xcor ycor)
+  
+  let target nobody
+  
+  let nearby-officers other turtles with [breed = cops] in-radius (vision_range * 3)
+  set target min-one-of nearby-officers [xcor + ycor]
+ 
+  send-cop-msg message-type content target
+end
+
+to evaluate-cop-belief
+  
+  let is-chief exist-beliefs-of-type "am-chief"
+  let is-officer exist-beliefs-of-type "am-officer"
+  
+  if is-chief = true [
+    ;let other-activists other turtles with [breed = citizens AND activist? = true]
+    let other-activists other turtles with [breed = citizens]
+    if count other-activists in-radius vision_range >= 3 [
+        call-backup
+    ] 
+  ]
+  
+end 
+
+; ******************* FINITE STATE MACHINE *****************
+; Running the current state
+
+to test-cop
+  ; print word who ": in state test-cop"
+end ;- test-cop
+
