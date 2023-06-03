@@ -13,20 +13,30 @@
 ; - Created the state exit-work-building (exit the work building by moving to the door patch (currently shown with the red patch))
 ; - Created the state go-home (citizens make their way home via either empty patches or townsquare patches)
 ; 2023-05-02 Modified move-at-work, go-to-work and added comments to states, Group 8 (Ingvar Pétursson, Hampus Oxenholt, Adam Makowski)
-; 2023-05-11 Integrated task 8.45 and 11.9 Group 3 Anna Selstam, Malin Ramkull, Wael Mahrous: 
+; 
+; 2023-05-11 Group 3 Anna Selstam, Malin Ramkull, Wael Mahrous: 
 ; - Added functionality to check messages
 ; - Added function: to-report estimated-arrest-probability 
 ; - Added function: to at-townSquare 
 ; - Added if patch-type-check = "townSquare" in perceive-citizen-env
 ; - Added function: send-citizen-msg
 ; - Added function: being-arrested
-;---------------------------------------------------
+; 2023-05-17 Group 3 Anna Selstam, Malin Ramkull, Wael Mahrous: 
+; - Added to function: at-home
+; - Added to function: walk-around-freely
+; - Added function: to-report net-risk
+; - Added functionality for if performative = "friend-request"
+; - Added next state functionality for going-to-prison and at-prison
+; - Updated next state functionality for being-arrested
 
+;---------------------------------------------------
 
 ; ******************* PROCESS MESSAGES *****************
 ; reading messages
 to process-citizen-msg
   ; print word who ": citizen-messages processed"
+  
+    ;;;; ****** CHECK MSG HERE ******
   let performative ""
   let msg_content ""
   let type_content ""
@@ -40,23 +50,32 @@ to process-citizen-msg
    set performative get-performative msg
    set msg_content get-content msg
    
-    ;if performative = "x" [
-    ;]
+    ; -------------------- ADDED FOR TASK 7.72/ANNA -------------------- 
+    if performative = "friend-request" [
+      ;print (word who ": I received a friend request from: " sender) ; flag, you can de-comment
+      
+      if not member? sender friendsList [
+        set friendsList lput turtle read-from-string sender friendsList
+      ]
+      
+      print (word who ": my friends <3 : " friendsList) ; flag, you can de-comment
+    ]
+    ; ------------------------------------------------------------------- 
   ]
+  
 end ;- process-citizen-msg
 
 
 ; ******************* PERCEIVE ENVIRONMENT *****************
 ; Updating beliefs
 to perceive-citizen-env
-  ;print word who ": citizen environment perceived"
+  ; print word who ": citizen environment perceived"
   ; test:
   ; put the intention test-citizen-intention onto the intention stack
   
   ; Update all beliefs
   evaluate-belief
 
-  
   ; Reactive part of the agent
   ; The reactive intentions are added to the intention stack here. 
   
@@ -68,11 +87,13 @@ to perceive-citizen-env
     add-intention "check-in" "check-in-done"
   ]
   
-    ; -------------------- ADDED /Group 3 -------------------- 
+  
+  ; -------------------- ADDED FOR TASK 11.9 /ANNA -------------------- 
   if patch-type-check = "townSquare" [
     add-intention "at-townSquare" "true"
   ]
   ; ------------------------------------------------------------------- 
+  
   
   
   ; More add-intentions can be added here
@@ -137,12 +158,15 @@ to-report check-in-done
   report true
 end
 
+
+
 ; ******************* FINITE STATE MACHINE *****************
 ; Running the current state
 
 
 
-; -------------------- ADDED  /Group 3 -------------------- 
+
+; -------------------- ADDED FOR TASK 11.9 and 7.72/ANNA -------------------- 
 to-report estimated-arrest-probability
   
   let k 2.3 ;experiment with the value of k or look it up its suggested value from the research papers
@@ -152,6 +176,10 @@ to-report estimated-arrest-probability
   
   report 1 - exp (- k * floor (c / a)) 
   
+end
+
+to-report net-risk
+  report R * estimated-arrest-probability
 end
 
 to at-townSquare
@@ -188,7 +216,6 @@ to at-townSquare
   
 end
 
-
 to being-arrested
   print (word who ": i am arrested!") ;flag, you can de-comment
   
@@ -196,20 +223,22 @@ to being-arrested
   set color white
   set activist? false
   update-belief create-belief "demonstrate" false
+  set next_state [-> going-to-prison]
   
 end
+
 ; ------------------------------------------------------------------- 
 
 
 
-
+to demonstrate
+end
 
 to at-home
   
   let work-belief-exist exist-beliefs-of-type "can-work"
   
   if work-belief-exist = true [ 
-  
     ; Get the first element of the type "can-work", there should only be one of these elements
     let work-belief first beliefs-of-type "can-work"
     
@@ -218,9 +247,25 @@ to at-home
     if item 1 work-belief = true [
       set next_state [ -> go-to-work ]
     ]
-    
   ] 
   
+  ; -------------------- ADDED FOR TASK 7.72 /ANNA -------------------- 
+  if flagWeekend = true [
+    let hehe random 4
+    if hehe = 1 [
+      ;print (word who ": it's weekend!")
+      set next_state [-> walk-around-freely]
+    ] 
+  ]
+  
+  if not empty? temporaryFriendList [
+    foreach temporaryFriendList [
+      x -> 
+      send-citizen-msg "friend-request" "you want to be friends?" x
+      set temporaryFriendList remove x temporaryFriendList
+    ]
+  ]
+  ;----------------------------------------------------------------------
 end
 
 to go-to-factory
@@ -311,6 +356,9 @@ end
 to go-to-town-square
 end 
 
+to at-town-square
+end
+
 to go-to-restaurant
 end
 
@@ -341,9 +389,7 @@ to walk-around-freely
   random_walk
   
   let entertainment-belief-exist exist-beliefs-of-type "want-entertainment"
-  
   if entertainment-belief-exist = true [
-  
     ; Get the first element of the type "want-entertainment", there should only be one of these elements
     let entertainment-belief first beliefs-of-type "want-entertainment"
     
@@ -354,10 +400,29 @@ to walk-around-freely
       if flagEvening = true [
         set next_state [ -> go-home ]
       ]
-    
     ]
-    
   ]
+  
+  ; -------------------- ADDED FOR TASK 7.72 /ANNA -------------------- 
+  let target nobody
+  let myGrievance G 
+  let match false
+  
+  let citizens-on-the-way other turtles with [breed = citizens] 
+  if any? citizens-on-the-way in-cone 1 180 [ 
+    set target min-one-of citizens-on-the-way [xcor + ycor]
+    ask target [ 
+      if abs (G - myGrievance) < 0.02 [
+        set match true
+        print (word who ": (Target) We have similar G! Target grievance: " G ", my grievance ("myself"): " myGrievance) ;flag, you can de-comment
+      ]
+    ]
+    if match = true AND not member? target temporaryFriendList [
+      set temporaryFriendList lput target temporaryFriendList 
+      print (word who ": my templist: " temporaryFriendList) ; flag, you can de-comment
+    ]
+  ]
+  ; --------------------------------------------------------------------
   
 end
 
@@ -373,14 +438,14 @@ end
 to organize-demonstration
 end
 
-to demonstrate
-end
-
-
 to going-to-prison
+  print (word who ": i am going to prison!") ;flag, you can de-comment
+  set next_state [-> at-prison]
 end 
 
 to at-prison
+  print (word who ": i am at prison!") ;flag, you can de-comment
+  set next_state [-> walk-around-freely]
 end
 
 ; Citizen moves towards their work place's door
@@ -423,6 +488,14 @@ end
 ; For example the random walk procedure is called from walk-around-freely state, but this is not
 ; a state that they are in. 
 
+to send-citizen-msg [message-type content receiver]
+  let msg create-message message-type	; create the message with the performative
+  set msg add-receiver [who] of receiver msg 	; add receiver to the message
+  set msg add-content content msg 	; add content to the message
+      
+  add-intention "send " msg 
+end 
+
 ; Move around inside the work region while at work, tries to stand alone on a patch.
 to move-at-work  
   let myWorkPlace placeOfWork
@@ -444,7 +517,7 @@ end
 ; Moves the agent to a random patch that is currently not occupied and there are
 ; no other turtles on that patch.
 to random_walk
-
+  
   ; Get all empty patches
   let empty_patches patches in-radius vision_range with [not any? turtles-here]
 

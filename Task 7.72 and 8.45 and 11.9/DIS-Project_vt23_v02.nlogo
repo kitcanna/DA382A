@@ -125,7 +125,7 @@ to update-time-flags
   ]
 
   if debug-time = true [
-    print word "Time: " time
+    ;print word "Time: " time
   ]
 end
 @#$#@#$#@
@@ -234,7 +234,7 @@ SWITCH
 289
 show_beliefs
 show_beliefs
-1
+0
 1
 -1000
 
@@ -258,7 +258,7 @@ perc-cops
 perc-cops
 0
 90
-10.0
+18.0
 1
 1
 NIL
@@ -274,6 +274,64 @@ showPatchLabels
 0
 1
 -1000
+
+PLOT
+20
+383
+220
+533
+On TownSquare
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+true
+"" ""
+PENS
+"cops" 1.0 0 -13345367 true "" "plot count cops-on patches with [region = \"townSquare\"]\n"
+"citizens" 1.0 0 -4699768 true "" "plot count citizens-on patches with [region = \"townSquare\"]"
+
+PLOT
+21
+539
+221
+689
+Total count
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+true
+"" ""
+PENS
+"citizens" 1.0 0 -3508570 true "" "plot count turtles with [breed = citizens AND activist? = false]"
+"activists" 1.0 0 -2674135 true "" "plot count turtles with [breed = citizens AND activist? = true]"
+"cops" 1.0 0 -10649926 true "" "plot count turtles with [breed = cops]"
+
+PLOT
+20
+695
+220
+845
+cops on/off patrol
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+true
+"" ""
+PENS
+"on patrol" 1.0 0 -817084 true "" "plot count turtles with [breed = cops AND (item 1(read-first-belief-of-type \"on-patrol\") = true)]"
+"off patrol" 1.0 0 -7500403 true "" "plot count turtles with [breed = cops AND (item 1(read-first-belief-of-type \"on-patrol\") = false)]"
 
 @#$#@#$#@
 ## WHAT IS IT?

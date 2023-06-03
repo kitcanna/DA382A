@@ -11,7 +11,16 @@
 ;   middle of the townsquare to have no available patches thus crashing. The size of the townsquare is connected to the create-building size parameter in setupenvironment.nls.
 ; 2023-04-14 Added the template beliefs, Group 8 (Ingvar Pétursson, Hampus Oxenholt)
 ; 2023-05-02 Changed the start states, Group 8 (Ingvar Pétursson, Hampus Oxenholt)
-;
+; 2023-05-12 Group 3 Anna Selstam, Malin Ramkull, Wael Mahrous: 
+; - Changed initiation values for frustration and fear, and added initiations for activist-label
+; - Added variables for cops and for one chief
+; - Defined variables H,R,L,G, temporaryFriendList
+
+
+; 2023-05-17 Anna Selstam added for task 12: 
+; - initialized: demonstrationLeader?, demonstrationLocation, prefProtestLocList.
+; - added belief demonstrationLeader
+; - added ask one-of citizens to be set as leader
 ;---------------------------------------------------
 
 
@@ -31,7 +40,32 @@ to setup-agents
     set beliefs []
     set incoming-queue []
     set friendsList []
-     
+    
+    
+    ; -------------------- ADDED FOR TASK 12 /ANNA -------------------- 
+    set demonstrationLeader? false
+    set demonstrationLocation "not decided"
+    set prefProtestLocList shuffle ["City Hall" "Central Park" "Courthouse"]
+    ; ------------------------------------------------------------------- 
+    
+    ; -------------------- ADDED FOR TASK 11.9 /ANNA -------------------- 
+    set frustration random  100 / 100 ;is a value between 0..100 and corresponds to the result of grievance, hardship and legitimacy
+    set fear random 100 / 100; 'fear' is a value between 0..100 and has the same impact as 'risk-aversion'
+    
+    set activist? false
+    ; ------------------------------------------------------------------- 
+    
+    
+    ; -------------------- ADDED FOR TASK 7.72 /ANNA -------------------- 
+    
+    set H random  100 / 100 ; hardship perceived by the agent
+    set R random  100 / 100 ; risk aversion perceived by the agent
+    set L random  100 / 100 ; perceived government legitimacy
+    
+    set G (H * (1 - L)) ; grievance perceived by the agent
+    set temporaryFriendList []
+    ; ------------------------------------------------------------------- 
+    
     set placeOfWork one-of ["factory" "workPlace" "volunteerPlace" "university"]
     set employed? false ; Flag that indicates is the agent got work at the factory that day (see task 5 for more information)
     set vision_range 5  ; Less vision_range will crash go-to-work if they spawn inside a region and has no allowed movement (see version history for more info).
@@ -43,7 +77,7 @@ to setup-agents
   
   ; Give all citizens the belief that they want to work
   ask citizens [
-
+    
     ; Add all beliefs
     ; These beliefs are a template, the names and value can be changed to be adapted to the situation. 
     ; Just make sure they are not already in use, you can also add your own beliefs if it is needed. 
@@ -86,8 +120,23 @@ to setup-agents
 
     set belief create-belief "demonstrate" "false"
     add-belief belief
+    
+    ; -------------------- ADDED FOR TASK 12 /ANNA -------------------- 
+    set belief create-belief "demonstrationLeader" "false"
+    add-belief belief
+    ; ------------------------------------------------------------------- 
   ]
   
+    ; -------------------- ADDED FOR TASK 12 /ANNA -------------------- 
+  ask one-of citizens [
+    set shape "face sad"
+    set color red
+    set locationVotesList [] 
+    set demonstrationLeader? true
+    let belief create-belief "demonstrationLeader" "true"
+    add-belief belief
+  ]
+    ; ------------------------------------------------------------------- 
   
   ;---- setup cops
   
@@ -104,6 +153,7 @@ to setup-agents
     set next_state    [ -> test-cop]
     set current_state [ -> test-cop]
     
+    ; -------------------- ADDED FOR TASK 8.45 /ANNA -------------------- 
     set title "officer"
     set vision_range 10
     set head-x 0
@@ -119,13 +169,16 @@ to setup-agents
   ask one-of cops [
     set title "chief"
     set color pink
-    set shape "person"
+    set shape "arrow"
     
     let belief create-belief "am-chief" "true"
     add-belief belief
     
+    set belief create-belief "on-patrol" "false"
+    add-belief belief
+    
   ]
-  
+  ; ------------------------------------------------------------------- 
   
 end ;--setup-agents
 

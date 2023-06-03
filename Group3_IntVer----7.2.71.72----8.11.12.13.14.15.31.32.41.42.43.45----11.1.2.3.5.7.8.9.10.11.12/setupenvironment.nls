@@ -8,6 +8,8 @@
 ; 2023-04-27 need to add the comments here Group 4 (Anton, Marcus & Andreas)
 ; 2023-05-01 Fixed issue in create-building, now all global locations are updated instead of only town square, Group 8 (Ingvar Pétursson, Hampus Oxenholt, Adam Makowski)
 ; 2023-05-11 Added policeStation functionality, Group 2 (Alameer Al-Badrani, Samuel Peltomaa Åström, Simon Winoy, Sinan Sabree)
+; 2023-05-18 Group 4(Anton, Andreas, Marcus)
+; - Townswquare no longer has a doorway assigned to it in create-building.
 ;---------------------------------------------------
 
 
@@ -123,13 +125,14 @@ to create-building [x y buildingSize buildingColor regionName]
     set pcolor buildingColor
     set region regionName
   ]
-  
-  ask patches with [
-    pxcor = round (building-xcor) and
-    pycor = round (building-ycor + building-half-size)
-  ] [
-   set pcolor red
-   set doorway true
+  if not (regionName = "townSquare") [
+    ask patches with [
+      pxcor = round (building-xcor) and
+      pycor = round (building-ycor + building-half-size)
+    ] [
+      set pcolor red
+      set doorway true
+    ]
   ]
   
   if showPatchLabels [

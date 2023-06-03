@@ -121,10 +121,10 @@ ticks
 30.0
 
 SWITCH
-49
-200
-178
-233
+22
+163
+151
+196
 show-intentions
 show-intentions
 1
@@ -181,10 +181,10 @@ NIL
 1
 
 INPUTBOX
-11
-391
-61
-451
+160
+162
+210
+222
 tickNum
 10.0
 1
@@ -192,10 +192,10 @@ tickNum
 Number
 
 SWITCH
-49
-244
-177
-277
+22
+207
+150
+240
 show_messages
 show_messages
 1
@@ -203,10 +203,10 @@ show_messages
 -1000
 
 SWITCH
-47
-287
-174
-320
+20
+250
+147
+283
 show_beliefs
 show_beliefs
 0
@@ -214,10 +214,10 @@ show_beliefs
 -1000
 
 SWITCH
-48
-328
-175
-361
+21
+291
+148
+324
 show_lines
 show_lines
 1
@@ -238,6 +238,25 @@ perc-cops
 1
 NIL
 HORIZONTAL
+
+PLOT
+20
+330
+220
+480
+Citizens
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"citizens" 1.0 0 -16777216 true "" "plot count turtles with [breed = citizens AND activist? = false]"
+"activists" 1.0 0 -2674135 true "" "plot count turtles with [breed = citizens AND activist? = true]"
 
 @#$#@#$#@
 ## WHAT IS IT?

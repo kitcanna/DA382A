@@ -15,6 +15,17 @@
 ; 2023-05-12 Group 3 Anna Selstam, Malin Ramkull, Wael Mahrous: 
 ; - Changed initiation values for frustration and fear, and added initiations for activist-label
 ; - Added variables for cops and for one chief
+; 2023-05-18 Group 6 (Hedda E, Alica S, Robin Z): 
+; - Added variable for frustration threshold for orginzing demonstartion
+; - Added a method to fill friendsList  
+; 2023-05-20 Group 7(Anton Satow, Zainab Alfredji, Ted Ljungsten)
+; - Added fight and run-away beliefs
+; 2023-05-20 Group 6 (Hedda E, Alica S, Robin Z)
+; - Added variable, activeSocMediaList
+; 2023-05-21 Added beliefs Group 5 (Anas M, Hussein J)
+; 2023-05-23 Group 1 (Adam J, Johan A, Teddie O)
+; - Initiated fear, fear-happened and created belief "police-around"
+
 ;---------------------------------------------------
 
 
@@ -30,10 +41,17 @@ to setup-agents
     set size 1
     set color white
     setxy random 30 random 30
+    set fear random 50
+    set fear-happened false
     set intentions []
     set beliefs []
     set incoming-queue []
     set friendsList []
+    
+    ; -------------------- ADDED FOR TASK 7.71 /GROUP 6 ----------------
+    set myActiveSocMediaList []
+    set activeSocMediaList []
+    ; ------------------------------------------------------------------- 
      
     set placeOfWork one-of ["factory" "workPlace" "volunteerPlace" "university"]
     set employed? false ; Flag that indicates is the agent got work at the factory that day (see task 5 for more information)
@@ -50,6 +68,22 @@ to setup-agents
     
     set activist? false
     ; ------------------------------------------------------------------- 
+    
+    ; -------------------- ADDED FOR TASK 11.11 /GROUP 6 -------------------- 
+     set frustThreshold random 100 / 100 ; May be changed to a fixed value 
+    ; ------------------------------------------------------------------- 
+
+    
+    ; -------------------- ADDED FOR TASK 7.72 /ANNA -------------------- 
+    
+    set H random  100 / 100 ; hardship perceived by the agent
+    set R random  100 / 100 ; risk aversion perceived by the agent
+    set L random  100 / 100 ; perceived government legitimacy
+    
+    set G (H * (1 - L)) ; grievance perceived by the agent
+    set temporaryFriendList []
+    ; ------------------------------------------------------------------- 
+    
     
   ]
   
@@ -98,6 +132,31 @@ to setup-agents
 
     set belief create-belief "demonstrate" "false"
     add-belief belief
+    
+    set belief create-belief "fight" "false"
+    add-belief belief 
+    
+    set belief create-belief "run-away" "false"
+    add-belief belief
+    
+    ; ----------- ADDED/GROUP 1 ---------------------
+    set belief create-belief "police-around" "false"
+    add-belief belief
+    
+    
+    ; -------------------- ADDED/GROUP 5 -------------------- 
+    set belief create-belief "stay-home" "false"
+    add-belief belief
+    ; -------------------------------------------------------------------     
+    
+    ; -------------------- ADDED/GROUP 6 -------------------- 
+    fill-friendList ; May be removed? 
+    ; -------------------------------------------------------------------     
+    
+    ; -------------------- ADDED/GROUP 10 -------------------- 
+    set belief create-belief "resetTime" false
+    add-belief belief
+    ; ------------------------------------------------------------------- 
   ]
   
   
@@ -113,8 +172,8 @@ to setup-agents
     set beliefs []
     set incoming-queue []
     set mode "eager"
-    set next_state    [ -> at-policeStation]
-    set current_state [ -> at-policeStation]
+    set next_state    [ -> idleState]
+    set current_state [ -> idleState]
     
     set vision_range 7 ; Group x set 5, we set 10, so we suggest 7 /Group 3
     
@@ -135,6 +194,7 @@ to setup-agents
   
   ask one-of cops[
     set title "chief"
+    set next_state [ -> assignPoliceState ]
     let belief create-belief "Police Chief" "false"
     add-belief belief
     set cop-list []
@@ -154,3 +214,25 @@ to setup-agents
   
 end ;--setup-agents
 
+; -------------------- ADDED/GROUP 6 -------------------- 
+; Filling friendList with random number of friends seen within agents vision radius
+to fill-friendList
+  ; find n friends in a cone
+  ;let myID who
+  let nbr (1 + random 5)
+  let nbrOfFriends 0
+  let dist 0.5
+  let angle 15
+  let friends []
+  while [nbrOfFriends < nbr][
+      set friends citizens in-cone dist angle 
+      set nbrOfFriends (count friends)
+      set dist dist + 1
+      set angle angle + 1
+    ]
+  set friendsList [who] of friends ; sort always returns a list
+  set friendsList remove who friendsList; remove the own id
+  ;debug-print
+  ;print (word "Ag: " who "FriendsList= " friendsList ", nFriends= " nbrOfFriends ", dist=" dist ", angle= " angle ", n= " nbr )
+end
+; ------------------------------------------------------------------- 

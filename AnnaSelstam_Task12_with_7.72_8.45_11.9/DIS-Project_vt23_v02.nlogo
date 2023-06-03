@@ -125,7 +125,9 @@ to update-time-flags
   ]
 
   if debug-time = true [
-    ;print word "Time: " time
+    print word "Time: " time
+    print "------------------------------------------"
+    print " "
   ]
 end
 @#$#@#$#@
@@ -234,7 +236,7 @@ SWITCH
 289
 show_beliefs
 show_beliefs
-0
+1
 1
 -1000
 
@@ -258,7 +260,7 @@ perc-cops
 perc-cops
 0
 90
-29.0
+11.0
 1
 1
 NIL
@@ -271,7 +273,7 @@ SWITCH
 376
 showPatchLabels
 showPatchLabels
-0
+1
 1
 -1000
 

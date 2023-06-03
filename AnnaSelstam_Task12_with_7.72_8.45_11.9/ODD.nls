@@ -6,9 +6,10 @@
 ; 2023-04-13 Added global variables of the factory middle, Group 8 (Ingvar Pétursson, Hampus Oxenholt, Adam Makowski)
 ; 2023-04-14 Added global variable for amount of factory workers, Group 8 (Ingvar Pétursson, Hampus Oxenholt, Adam Makowski)
 ; 2023-04-23 Added global variable debug-time and added missing global locations, Group 8 (Ingvar Pétursson, Hampus Oxenholt, Adam Makowski)
-; 2023-05-11 Added own variable title, cop-list, placeToGo, Group 1 (Adam Joseph, Johan Alvarado Rodriguez, Teddie Ohrslin)
-; 2023-05-11 Added town-square-matrix varible in globals, group 7(Anton Satow, Zainab Alfredji, Ted Ljungsten)
 ; 2023-05-12 Group 3 Anna Selstam, Malin Ramkull, Wael Mahrous: Changed label names for frustration and fear
+; 2023-05-17 Group 3 Anna Selstam, Malin Ramkull, Wael Mahrous: added variable L and temporaryFriendList
+
+; 2023-06-02 Anna Selstam added for task 12: prefProtestLocList, demonstrationLocation, demonstrationLeader?, locationVotesList.
 ;---------------------------------------------------
 
 ;*** ODD (Overview, Design concepts, and Details) procedure for the project **********************
@@ -40,15 +41,27 @@ citizens-own [
   vision_range; numerical value for the vision range
   homeLoc; home location, where the agent lives
   friendsList; list with id of closest friends
+  
   H; hardship perceived by the agent
   G; grievance perceived by the agent
   R; risk aversion perceived by the agent
   N; net risk estimated by the agent
   P; arrest probability estimated by the agent
-
-  ; -------------------- CHANGED /GROUP 3 -------------------- 
+  
+  ; -------------------- ADDED FOR TASK 12 /ANNA -------------------- 
+  prefProtestLocList;
+  demonstrationLocation;
+  demonstrationLeader?
+  locationVotesList;
+  ; -------------------------------------------------------------------   
+  
+  ; -------------------- CHANGED FOR TASK 11.9 /ANNA -------------------- 
   frustration; frustration
   fear; fear
+  ; ------------------------------------------------------------------- 
+  ; -------------------- ADDED FOR TASK 7.72 /ANNA -------------------- 
+  L ; perceived government legitimacy
+  temporaryFriendList 
   ; ------------------------------------------------------------------- 
   
   
@@ -63,15 +76,10 @@ cops-own [
   mode; (eager, kind, vicious) type of cop
   vision_range; numerical value for the vision range
   record; number of agents arrested in total
-  placeToGo
-  title;
-  cop-list
   
-  ; -------------------- ADDED /GROUP 3 -------------------- 
   head-x;
   head-y;
-  ; ------------------------------------------------------------------- 
-
+  title;
   ;----- beliefs
 
 ]
@@ -126,8 +134,6 @@ globals [
   debug-general ; general debugging flag
   debug-time ; Prints the time in the terminal if set to true
   debug-spec ; specific debugging flag (replace 'spec' with something specific
-  
-  town-square-matrix
 
 ]
 ;----- end global variables -----------

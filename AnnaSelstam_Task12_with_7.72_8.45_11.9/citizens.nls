@@ -21,8 +21,20 @@
 ; - Added if patch-type-check = "townSquare" in perceive-citizen-env
 ; - Added function: send-citizen-msg
 ; - Added function: being-arrested
+; 2023-05-17 Group 3 Anna Selstam, Malin Ramkull, Wael Mahrous: 
+; - Added to function: at-home
+; - Added to function: walk-around-freely
+; - Added function: to-report net-risk
+; - Added functionality for if performative = "friend-request"
+; - Added next state functionality for going-to-prison and at-prison
+; - Updated next state functionality for being-arrested
 
+; 2023-06-02 Anna Selstam added for task 12:
+; - to decide_demonstration_location 
+; - performative = "myPrefProtestLocation"
+  
 ;---------------------------------------------------
+
 
 ; ******************* PROCESS MESSAGES *****************
 ; reading messages
@@ -32,7 +44,6 @@ to process-citizen-msg
     ;;;; ****** CHECK MSG HERE ******
   let performative ""
   let msg_content ""
-  let type_content ""
   let msg ""
   let sender ""
 
@@ -43,9 +54,33 @@ to process-citizen-msg
    set performative get-performative msg
    set msg_content get-content msg
    
-    ;if performative = "x" [
-    ;]
+    ; -------------------- ADDED FOR TASK 7.72 / ANNA SELSTAM -------------------- 
+    if performative = "friend-request" [
+      ;print (word who ": I received a friend request from: " sender) ; flag, you can de-comment
+      
+      if not member? sender friendsList [
+        set friendsList lput (turtle read-from-string sender) friendsList
+      ]
+      
+      ;print (word who ": my friends <3 : " friendsList) ; flag, you can de-comment
+    ]
+    ; ------------------------------------------------------------------- 
+    
+    ; -------------------- ADDED FOR TASK 12 / ANNA SELSTAM --------------------     
+    
+    if performative = "myPrefProtestLocation" [
+      ;print (word who ": I received an answer from: " sender ", who's prefered protest location is: " msg_content) ; flag, you can de-comment
+
+      if not member? (list msg_content sender) locationVotesList [
+        set locationVotesList lput (list msg_content sender) locationVotesList
+      ]
+      ;print (word who ": votes: " locationVotesList) ; flag, you can de-comment
+    ]
+
+    ; ------------------------------------------------------------------- 
+    
   ]
+
   
 end ;- process-citizen-msg
 
@@ -117,9 +152,7 @@ to evaluate-belief
       update-belief want-entertainment-belief-update
     ]
   ]  
-  
  
-  ; Add code for belief update here
   
 end 
 
@@ -148,9 +181,7 @@ end
 ; Running the current state
 
 
-
-
-; -------------------- ADDED FOR TASK 11.9 /ANNA -------------------- 
+; -------------------- ADDED FOR TASK 11.9 and 7.72/ANNA -------------------- 
 to-report estimated-arrest-probability
   
   let k 2.3 ;experiment with the value of k or look it up its suggested value from the research papers
@@ -162,6 +193,10 @@ to-report estimated-arrest-probability
   
 end
 
+to-report net-risk
+  report R * estimated-arrest-probability
+end
+
 to at-townSquare
   ;print (word who ": EAP: " estimated-arrest-probability)
   ;print (word who ": Frustration: " frustration)
@@ -169,58 +204,62 @@ to at-townSquare
   
   let i-am-demonstrating item 1(read-first-belief-of-type "demonstrate")
   
-  ifelse i-am-demonstrating = "false" [
+  ifelse i-am-demonstrating = false [
     
     if frustration >= fear * estimated-arrest-probability [
       
-      print word who ": i want to demonstrate!" ;flag, you can de-comment
+      ;print word who ": i want to demonstrate!" ;flag, you can de-comment
       set color red
       set activist? true
-      update-belief create-belief "demonstrate" true
-      
-      ; add functionality for demonstration here 
+
+      ;update-belief create-belief "demonstrate" true
+      let i-am-demonstrating-update create-belief "demonstrate" true
+      update-belief i-am-demonstrating-update
+
     ]
   ]
   
   ;      group 7 task
   [
     if frustration < fear * estimated-arrest-probability [
-      print word who ": i want to run away!" ;flag, you can de-comment
+      ;print word who ": i want to run away!" ;flag, you can de-comment
       set color white
       set activist? false
-      update-belief create-belief "demonstrate" false
       
+      ;update-belief create-belief "demonstrate" false
+      let i-am-demonstrating-update create-belief "demonstrate" false
+      update-belief i-am-demonstrating-update
+
       ; add functionality to go back to normal life here 
     ]
   ]
+ 
   
 end
 
-
 to being-arrested
-  print (word who ": i am arrested!") ;flag, you can de-comment
+  ;print (word who ": i am arrested!") ;flag, you can de-comment
   
   ; add functionality for arrest here, move the three lines below to functionality
   set color white
   set activist? false
-  update-belief create-belief "demonstrate" false
+  let i-am-demonstrating-update create-belief "demonstrate" false
+  update-belief i-am-demonstrating-update
+  set next_state [-> going-to-prison]
   
 end
 
 ; ------------------------------------------------------------------- 
 
 
-
 to demonstrate
 end
-
 
 to at-home
   
   let work-belief-exist exist-beliefs-of-type "can-work"
   
   if work-belief-exist = true [ 
-  
     ; Get the first element of the type "can-work", there should only be one of these elements
     let work-belief first beliefs-of-type "can-work"
     
@@ -229,9 +268,25 @@ to at-home
     if item 1 work-belief = true [
       set next_state [ -> go-to-work ]
     ]
-    
   ] 
   
+  ; -------------------- ADDED FOR TASK 7.72 /ANNA -------------------- 
+  if flagWeekend = true [
+    let hehe random 4
+    if hehe = 1 [
+      ;print (word who ": it's weekend!")
+      set next_state [-> walk-around-freely]
+    ] 
+  ]
+  
+  if not empty? temporaryFriendList [
+    foreach temporaryFriendList [
+      x -> 
+      send-citizen-msg "friend-request" "you want to be friends?" x
+      set temporaryFriendList remove x temporaryFriendList
+    ]
+  ]
+  ;----------------------------------------------------------------------
 end
 
 to go-to-factory
@@ -351,13 +406,101 @@ end
 to hold-speech
 end 
 
+
+; -------------------- ADDED FOR TASK 12 / ANNA SELSTAM --------------------  
+to decide_demonstration_location 
+  
+ let i-am-demonstrating item 1(read-first-belief-of-type "demonstrate")
+ let leader one-of citizens with [demonstrationLeader? = true]
+  
+  ; ---------------------------------------------------------------------------------------------------------
+  
+  ; if its not the weekend and you're a citizen (not a leader) that's demonstrating but the location isn't decided yet, send your prefered location to the leader.
+  if flagWeekend = false AND i-am-demonstrating = true AND demonstrationLeader? = false AND (demonstrationLocation = "not decided")[
+    send-citizen-msg "myPrefProtestLocation" (item 0 (prefProtestLocList)) leader
+  ]
+  
+  ; ---------------------------------------------------------------------------------------------------------
+  
+  ; if its the weekend and you're the leader, its time do demonstrate for real and decide the location. 
+  ; the leader takes the location with moste votes and at the same time empties the list for next week's usage
+  if flagWeekend = true AND demonstrationLeader? = true AND (demonstrationLocation = "not decided") [
+    print (word who ": IT'S WEEKEND, TIME TO DEMONSTRATE.")
+    
+    ifelse empty? locationVotesList [
+      print (word who ": No votes yet!") 
+    ]
+    [
+      print (word who ": The votes are: " locationVotesList) 
+
+      let courthouseCounter 0
+      let cityhallCounter 0
+      let centralparkCounter 0
+      
+      foreach locationVotesList [
+        x -> 
+        (ifelse
+          item 0 (x) = "Courthouse" [
+            set courthouseCounter (courthouseCounter + 1)
+          ]
+          item 0 (x) = "City Hall" [
+            set cityhallCounter (cityhallCounter + 1)
+          ]
+          item 0 (x) = "Central Park" [
+            set centralparkCounter (centralparkCounter + 1)
+          ] [
+        ])
+       set locationVotesList remove x locationVotesList 
+      ]
+      
+      print (word who ": Votes for Courthouse: " courthouseCounter ", votes for City Hall: " cityhallCounter ", votes for Central Park: " centralparkCounter) 
+      
+      let counters (list courthouseCounter cityhallCounter centralparkCounter)
+      let max-counter max counters
+      let max-index position max-counter counters
+      let max-variable item max-index ["Courthouse" "City Hall" "Central Park"]
+      
+      print (word who ": Winner: " max-variable)
+      
+      set demonstrationLocation max-variable
+      
+      ask citizens with [activist? = true] [
+        set demonstrationLocation max-variable
+      ]
+    ]
+  ]
+  
+  ; ---------------------------------------------------------------------------------------------------------
+
+  ; if its weekend and you're a citizen (not a leader) that's demonstrating and the location actually is set, report it to the crowd! 
+  if flagWeekend = true and i-am-demonstrating = true AND not (demonstrationLocation = "not decided") [
+      print (word who ": I am demonstrating and going to: " demonstrationLocation)
+  ]
+  
+  ; ---------------------------------------------------------------------------------------------------------
+  
+  ; if the weekend if over, reset the demonstrationLocation so that it can be set for next weekend's rally. 
+  if flagWeekend = false AND not (demonstrationLocation = "not decided") [
+    set demonstrationLocation  "not decided"
+    ask citizens [
+      set demonstrationLocation  "not decided"
+    ]
+    
+  ]
+  
+  ; ---------------------------------------------------------------------------------------------------------
+  
+end
+; ------------------------------------------------------------------- 
+
 to walk-around-freely
   random_walk
   
+  decide_demonstration_location
+  
+  
   let entertainment-belief-exist exist-beliefs-of-type "want-entertainment"
-  
   if entertainment-belief-exist = true [
-  
     ; Get the first element of the type "want-entertainment", there should only be one of these elements
     let entertainment-belief first beliefs-of-type "want-entertainment"
     
@@ -370,6 +513,29 @@ to walk-around-freely
       ]
     ]
   ]
+  
+  ; -------------------- ADDED FOR TASK 7.72 /ANNA -------------------- 
+  let target nobody
+  let myGrievance G 
+  let match false
+  
+  let citizens-on-the-way other turtles with [breed = citizens] 
+  if any? citizens-on-the-way in-cone 1 180 [ 
+    set target min-one-of citizens-on-the-way [xcor + ycor]
+    ask target [ 
+      if abs (G - myGrievance) < 0.02 [
+        set match true
+        ;print (word who ": (Target) We have similar G! Target grievance: " G ", my grievance ("myself"): " myGrievance) ;flag, you can de-comment
+      ]
+    ]
+    if match = true AND not member? target temporaryFriendList [
+      set temporaryFriendList lput target temporaryFriendList 
+      ;print (word who ": my templist: " temporaryFriendList) ; flag, you can de-comment
+    ]
+  ]
+  ; --------------------------------------------------------------------
+  
+ 
   
 end
 
@@ -386,9 +552,13 @@ to organize-demonstration
 end
 
 to going-to-prison
+  ;print (word who ": i am going to prison!") ;flag, you can de-comment
+  set next_state [-> at-prison]
 end 
 
 to at-prison
+  ;print (word who ": i am at prison!") ;flag, you can de-comment
+  set next_state [-> walk-around-freely]
 end
 
 ; Citizen moves towards their work place's door
@@ -424,7 +594,6 @@ to go-home
     move-to min-one-of movementAllowence [distance homeLocation]
   ]
 end
-
 
 ;******************* MISCELLANEOUS FUNCTIONS *****************
 ; These are procedures that can be called from states but are not states themselves.

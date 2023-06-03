@@ -7,6 +7,9 @@
 ; 2023-04-14 Added update time function, Group 8 (Ingvar Pétursson, Hampus Oxenholt, Adam Makowski)
 ; 2023-04-27 Added template beliefs, Group 8 (Ingvar Pétursson, Hampus Oxenholt, Adam Makowski)
 ; 2023-05-11 Added town-square-matrix in setup and matrix in extension, Group 7(Anton Satow, Zainab Alfredji, Ted Ljungsten)
+; 2023-05-18 Group10 (Felix B, Lucas H, Johan Ay)
+; - Added method find-frustrated
+; - Added settings for flagManger in update-time-flags
 
 
 ; ************ INCLUDED FILES *****************
@@ -104,6 +107,21 @@ to update-time-flags
   set time (time + 1)
   set time time mod 168
 
+  ; -------------------- ADDED FOR TASK 8.11 /GROUP 10 ----------------
+  if time = 0 [
+    ask citizens [
+      set flagManager 0
+      ;DEBUG print
+      ;print("RESETING MANAGERS")
+      if ( exist-beliefs-of-type "manager" ) and (( belief-content read-first-belief-of-type "manager" ) = true )[
+        remove-belief read-first-belief-of-type "manager"
+        set color white
+      ]
+    ]
+
+  ]
+  ; -------------------------------------------------------------------
+
   ; Determine if it is morning, evening or weekend
   let hour-of-day time mod 24
 
@@ -113,9 +131,19 @@ to update-time-flags
   set flagMorning false
   ]
 
+
+
   ; Check if it is evening
   ifelse (16 <= hour-of-day and hour-of-day <= 22)[
     set flagEvening true
+  ; -------------------- ADDED FOR TASK 8.11 /GROUP 10 ----------------
+    if flagManager = 0 and (time >= 110)[
+      ;print("PRE-FINDING")
+      set flagManager 1
+      find-frustrated
+    ]
+  ; -------------------------------------------------------------------
+
   ] [
     set flagEvening false
   ]
@@ -131,6 +159,39 @@ to update-time-flags
     print word "Time: " time
   ]
 end
+
+; -------------------- ADDED FOR TASK 8.11 /GROUP 10 ----------------
+; Finds the 3 most frustrated citizens and gives them the belief of being managers of demonstrations (task 8.11)
+to find-frustrated
+  ;print("ENTERED FINDER")
+  let angryValue []
+  let angryId []
+  let value 0
+  ask citizens[
+    let angryVal frustration ;belief-content read-first-belief-of-type "Frust"
+    set angryValue lput angryVal angryValue
+    set angryValue sort angryValue
+    set angryValue reverse angryValue
+  ]
+  let index 0
+  while [ index < 3 ] [
+    set value item index angryValue
+    ask citizens[
+      let angryVal frustration ;belief-content read-first-belief-of-type "Frust"
+      if angryVal = value [
+        let id [who] of self
+        set angryId lput id angryId
+        ask turtle id [
+          add-belief create-belief "manager" true
+          set color red]
+      ]
+    ]
+    set index index + 1
+  ]
+  set angryValue []
+  set angryId []
+end
+; -------------------------------------------------------------------
 @#$#@#$#@
 GRAPHICS-WINDOW
 225
@@ -179,7 +240,7 @@ num-agents
 num-agents
 5
 100
-100.0
+96.0
 1
 1
 NIL
@@ -226,7 +287,7 @@ SWITCH
 246
 show_messages
 show_messages
-0
+1
 1
 -1000
 
@@ -261,7 +322,7 @@ perc-cops
 perc-cops
 0
 90
-10.0
+41.0
 1
 1
 NIL

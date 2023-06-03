@@ -14,6 +14,7 @@
 ; 2023-05-12 Group 3 Anna Selstam, Malin Ramkull, Wael Mahrous: 
 ; - Changed initiation values for frustration and fear, and added initiations for activist-label
 ; - Added variables for cops and for one chief
+; - Defined variables H,R,L,G, temporaryFriendList
 ;---------------------------------------------------
 
 
@@ -44,6 +45,15 @@ to setup-agents
     ; ------------------------------------------------------------------- 
     
     
+    ; -------------------- ADDED FOR TASK 7.72 /ANNA -------------------- 
+    
+    set H random  100 / 100 ; hardship perceived by the agent
+    set R random  100 / 100 ; risk aversion perceived by the agent
+    set L random  100 / 100 ; perceived government legitimacy
+    
+    set G (H * (1 - L)) ; grievance perceived by the agent
+    set temporaryFriendList []
+    ; ------------------------------------------------------------------- 
     
     set placeOfWork one-of ["factory" "workPlace" "volunteerPlace" "university"]
     set employed? false ; Flag that indicates is the agent got work at the factory that day (see task 5 for more information)

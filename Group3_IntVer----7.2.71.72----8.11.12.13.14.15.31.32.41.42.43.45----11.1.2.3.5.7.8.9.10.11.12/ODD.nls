@@ -6,7 +6,21 @@
 ; 2023-04-13 Added global variables of the factory middle, Group 8 (Ingvar Pétursson, Hampus Oxenholt, Adam Makowski)
 ; 2023-04-14 Added global variable for amount of factory workers, Group 8 (Ingvar Pétursson, Hampus Oxenholt, Adam Makowski)
 ; 2023-04-23 Added global variable debug-time and added missing global locations, Group 8 (Ingvar Pétursson, Hampus Oxenholt, Adam Makowski)
-
+; 2023-05-11 Added own variable title, cop-list, placeToGo, Group 1 (Adam Joseph, Johan Alvarado Rodriguez, Teddie Ohrslin)
+; 2023-05-11 Added town-square-matrix varible in globals, group 7(Anton Satow, Zainab Alfredji, Ted Ljungsten)
+; 2023-05-12 Group 3 Anna Selstam, Malin Ramkull, Wael Mahrous: Changed label names for frustration and fear
+; 2023-05-18 Group 4 (Anton, Marcus, Andreas)
+; -Added cops-own variable officerToFollow. Added the global variable (flag) policeAssignmentComplete to check if assignment of officers to grunts is done
+; 2023-05-18 Group 6 (Hedda E, Alica S, Robin Z)
+; - Added variable for frustration threshold for organizing demonstrations 
+; - Added a global variable manager Group 6 (Hedda E, Alica S, Robin Z)
+; 2023-05-11 Added a global variable (flagManager) for task 8.11, Group 10 (Felix B, Lucas H, Johan Ay)
+; 2023-05-20 Group 6 (Hedda E, Alica S, Robin Z)
+; - Added global variable, activeSocMediaList
+; 2023-05-21 Group 2 (Alameer Al-Badrani, Samuel Peltomaa Åström, Simon Winoy, Sinan Sabree)
+; - Added citizen variable salary for task 11.2
+; 2023-05-23 Group 1 (Adam J, Johan A, Teddie O)
+; - Added citizen own fear_flag and fear-happend
 ;---------------------------------------------------
 
 ;*** ODD (Overview, Design concepts, and Details) procedure for the project **********************
@@ -33,20 +47,42 @@ turtles-own [
 
 ;---- Specific, local variables of citizen-agents
 citizens-own [
+  title;
   activist? ; (true, false) whether or not the citizen agent is an activist
   employed? ; (true, false) whether or not the agent has a job
   vision_range; numerical value for the vision range
   homeLoc; home location, where the agent lives
-  friendsList; list with id of closest friends
+  friendsList; list with id of closest friends 
   H; hardship perceived by the agent
   G; grievance perceived by the agent
   R; risk aversion perceived by the agent
   N; net risk estimated by the agent
   P; arrest probability estimated by the agent
-  Frust; frustration
-  Fear; fear
+
+  ; -------------------- CHANGED /GROUP 3 ---------------------------- 
+  frustration; frustration
+  fear; fear
+  fear-happened; used for flagging if agents been scared or not.
+  flag_fear; used for flagging if agents fear should decrease or not.
+  ; ------------------------------------------------------------------- 
+  
+  ; -------------------- ADDED FOR TASK 11.11 /GROUP 6 ----------------
+  frustThreshold
+  ; ------------------------------------------------------------------- 
+  
+  ; -------------------- ADDED FOR TASK 7.72 /ANNA -------------------- 
+  L ; perceived government legitimacy
+  temporaryFriendList 
+  ; ------------------------------------------------------------------- 
+  ; -------------------- ADDED FOR TASK 7.71 /GROUP 6 ----------------
+  myActiveSocMediaList; list with citizens online on social media 
+  ; -------------------------------------------------------------------
+  
   entertained ;0-100 How entertained the citizen is
   placeOfWork;
+  
+  ; -------------------- ADDED FOR TASK 10.2 /GROUP 2 ----------------
+  salary; a workplace-workers salary
   
   ;----- beliefs
 ]
@@ -56,10 +92,15 @@ cops-own [
   mode; (eager, kind, vicious) type of cop
   vision_range; numerical value for the vision range
   record; number of agents arrested in total
-  
+  placeToGo
+  title;
+  cop-list
+  officerToFollow; officer to follow
+  ; -------------------- ADDED /GROUP 3 -------------------- 
   head-x;
   head-y;
-  title;
+  ; ------------------------------------------------------------------- 
+
   ;----- beliefs
 
 ]
@@ -86,6 +127,10 @@ globals [
   flagMorning ; true if it is morning, e.g. time to get up
   flagEvening ; true if it is evening
   flagWeekend ; true if it is a weekend (2-days, Saturday and Sunday)
+  ; -------------------- ADDED FOR TASK 8.11 /GROUP 10 -------------------- 
+  flagManager
+  ; ------------------------------------------------------------------- 
+
   ;-----------------------------
   
   ;----- Spatial units, locations
@@ -114,7 +159,19 @@ globals [
   debug-general ; general debugging flag
   debug-time ; Prints the time in the terminal if set to true
   debug-spec ; specific debugging flag (replace 'spec' with something specific
-
+  
+  town-square-matrix
+  
+   ;---- cop flags
+  policeAssignmentComplete ; flag to check assignment of officers to grunts.
+  
+  ; -------------------- ADDED /GROUP 6 -------------------- 
+  manager 
+  ;------------------------------------------------
+  ; -------------------- ADDED FOR TASK 7.71 /GROUP 6 ----------------
+  activeSocMediaList; list with citizens online on social media 
+  ; -------------------------------------------------------------------
+  
 ]
 ;----- end global variables -----------
 

@@ -5,11 +5,16 @@
 ; 2022-04-10 Initial template, gks
 ; 2022-05-11 Added functionality for cops to send messages and follow orders from their chief.. (Group 3 Anna Selstam, Malin Ramkull, Wael Mahrous)
 ;
-;
-;
+; 2023-05-11 Group 3 Anna Selstam, Malin Ramkull, Wael Mahrous: 
+; - Added functionality to check messages, especially for checking if backing up. 
+; - Updated function: to perceive-cop-env
+; - Added function: to evaluate-cop-belief
+; - Added function: to send-cop-msg [message-type content receiver] 
+; - Added function: to move-freely
+; - Added function: to walk-heading 
+; - Added function: to call-backup
+
 ;---------------------------------------------------
-
-
 
 
 ; ******************* PROCESS MESSAGES *****************
@@ -19,7 +24,6 @@ to process-cop-msg
   ;;;; ****** CHECK MSG HERE ******
   let performative ""
   let msg_content ""
-  ;let type_content ""
   let msg ""
   let sender ""
 
@@ -40,7 +44,6 @@ to process-cop-msg
       set head-x x_content
       set head-y y_content
       
-      add-intention "walk-heading" "true" 
     ]
   
   ]
@@ -54,23 +57,22 @@ to perceive-cop-env
 
   evaluate-cop-belief
   
-  let patroool item 1(read-first-belief-of-type "on-patrol")  
+  let patroool item 1(read-first-belief-of-type "on-patrol")
   
-  if patroool = "false" [
-    add-intention "move-freely" "true"
+  ifelse patroool = true [
+    add-intention "walk-heading" "true" 
   ] 
-  
-  update-belief create-belief "on-patrol" patroool
+  [
+    add-intention "move-freely" "true"
+  ]
   
 end ;- perceive-cop-env
 
 
 to move-freely
-  ;print word who ": in move freely"
     rt random 50
     lt random 50
     fd 1
-
 end
  
 to send-cop-msg [message-type content receiver]
@@ -86,23 +88,27 @@ end
 to walk-heading 
   
   ;ifelse list xcor ycor = list head-x head-y [
-  ifelse xcor = head-x and ycor = head-y [
-    let patroool item 1(read-first-belief-of-type "on-patrol")  
-    update-belief create-belief "on-patrol" "false"
+  ifelse distance (patch head-x head-y) <= 2 [
+    
+    update-belief create-belief "on-patrol" false
+    set color blue
+    
   ] 
   [
+    
+    set color yellow
     facexy head-x head-y
     fd 1
-    set color yellow
     
     let target nobody
-    ;let activists-on-the-way other turtles with [breed = citizens AND activist? = true ] 
-    let activists-on-the-way other turtles with [breed = citizens] 
-    if any? activists-on-the-way in-radius (vision_range * 2) [ 
+    let activists-on-the-way other turtles with [breed = citizens AND activist? = true ] 
+    if any? activists-on-the-way in-cone 4 180 [ 
       
       set target min-one-of activists-on-the-way [xcor + ycor]
-      send-cop-msg "arrest" "you are arrested" target
-      print "sent"
+      ask target [
+        set next_state [-> being-arrested]
+      ]
+      ;send-cop-msg "arrest" "you are arrested" target
       
     ]
     
@@ -128,8 +134,7 @@ to evaluate-cop-belief
   let is-officer exist-beliefs-of-type "am-officer"
   
   if is-chief = true [
-    ;let other-activists other turtles with [breed = citizens AND activist? = true]
-    let other-activists other turtles with [breed = citizens]
+    let other-activists other turtles with [breed = citizens AND activist? = true]
     if count other-activists in-radius vision_range >= 3 [
         call-backup
     ] 

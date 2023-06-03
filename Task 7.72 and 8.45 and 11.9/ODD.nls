@@ -7,6 +7,7 @@
 ; 2023-04-14 Added global variable for amount of factory workers, Group 8 (Ingvar Pétursson, Hampus Oxenholt, Adam Makowski)
 ; 2023-04-23 Added global variable debug-time and added missing global locations, Group 8 (Ingvar Pétursson, Hampus Oxenholt, Adam Makowski)
 ; 2023-05-12 Group 3 Anna Selstam, Malin Ramkull, Wael Mahrous: Changed label names for frustration and fear
+; 2023-05-17 Group 3 Anna Selstam, Malin Ramkull, Wael Mahrous: added variable L and temporaryFriendList
 
 ;---------------------------------------------------
 
@@ -47,9 +48,14 @@ citizens-own [
   P; arrest probability estimated by the agent
   
   
+  
   ; -------------------- CHANGED FOR TASK 11.9 /ANNA -------------------- 
   frustration; frustration
   fear; fear
+  ; ------------------------------------------------------------------- 
+  ; -------------------- ADDED FOR TASK 7.72 /ANNA -------------------- 
+  L ; perceived government legitimacy
+  temporaryFriendList 
   ; ------------------------------------------------------------------- 
   
   
